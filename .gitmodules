@@ -1,0 +1,3 @@
+[submodule "micro_ros_espidf_component"]
+	path = component/micro_ros_espidf_component
+	url = https://github.com/JoelsonCRJ/micro_ros_espidf_component

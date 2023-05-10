@@ -47,7 +47,7 @@
 #endif
 
 /* FreeRTOS event group to signal when we are connected*/
-void micro_ros_task(void *argument);
+void uros_main_loop(void *argument); //call the uros main loop
 static EventGroupHandle_t s_wifi_event_group;
 
 /* The event group allows multiple bits for each event, but we only care about two events:
@@ -164,7 +164,7 @@ void app_main(void)
     //start microros_stack
     //pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
 
-    xTaskCreate(micro_ros_task, 
+    xTaskCreate(uros_main_loop, 
             "uros_task", 
             4096, 
             NULL,

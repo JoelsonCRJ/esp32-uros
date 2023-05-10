@@ -15,5 +15,8 @@
     "cmake.configureOnOpen": true,
     "idf.flashType": "UART",
     "idf.port": "/dev/ttyUSB0",
-    "idf.monitorBaudRate": "115200"
+    "idf.monitorBaudRate": "115200",
+    "files.associations": {
+        "config.h": "c"
+    }
 }

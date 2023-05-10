@@ -20,7 +20,9 @@
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
 
 rcl_publisher_t publisher;
+rcl_subscription_t led_subscriber;
 std_msgs__msg__Int32 msg;
+std_msgs__msg__Int32 recv_msg;
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {
@@ -32,7 +34,13 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 	}
 }
 
-void micro_ros_task(void * arg)
+void sub_led_callback(const void * msgin)
+{
+	const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
+	printf("Received: %d\n",  (int)  msg->data);
+}
+
+void uros_main_loop(void * arg)
 {
 	rcl_allocator_t allocator = rcl_get_default_allocator();
 	rclc_support_t support;
@@ -59,8 +67,16 @@ void micro_ros_task(void * arg)
 		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
 		"freertos_int32_publisher"));
 
+
+		// Create subscriber.
+	RCCHECK(rclc_subscription_init_default(
+		&led_subscriber,
+		&node,
+		ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+		"led_topic"));
+
 	// create timer,
-	rcl_timer_t timer;
+	rcl_timer_t timer= rcl_get_zero_initialized_timer();
 	const unsigned int timer_timeout = 1000;
 	RCCHECK(rclc_timer_init_default(
 		&timer,
@@ -69,36 +85,28 @@ void micro_ros_task(void * arg)
 		timer_callback));
 
 	// create executor
-	rclc_executor_t executor;
-	RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+	rclc_executor_t executor= rclc_executor_get_zero_initialized_executor();
+	RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
+	unsigned int rcl_wait_timeout = 1000;   // in ms
+	RCCHECK(rclc_executor_set_timeout(&executor, RCL_MS_TO_NS(rcl_wait_timeout)));
+	
+	// Add timer and subscriber to executor.
 	RCCHECK(rclc_executor_add_timer(&executor, &timer));
+	RCCHECK(rclc_executor_add_subscription(&executor, &led_subscriber, &recv_msg, &sub_led_callback, ON_NEW_DATA));
+
 
 	msg.data = 0;
 
-	while(1){
+	while(1)
+	{
 		rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
 		usleep(10000);
 	}
 
 	// free resources
 	RCCHECK(rcl_publisher_fini(&publisher, &node));
+	RCCHECK(rcl_subscription_fini(&led_subscriber, &node));
 	RCCHECK(rcl_node_fini(&node));
 
   	vTaskDelete(NULL);
 }
-
-// void app_main(void)
-// {   
-// #ifdef UCLIENT_PROFILE_UDP
-//     // Start the networking if required
-//     ESP_ERROR_CHECK(uros_network_interface_initialize());
-// #endif  // UCLIENT_PROFILE_UDP
-
-//     //pin micro-ros task in APP_CPU to make PRO_CPU to deal with wifi:
-//     xTaskCreate(micro_ros_task, 
-//             "uros_task", 
-//             CONFIG_MICRO_ROS_APP_STACK, 
-//             NULL,
-//             5, 
-//             NULL); 
-// }

@@ -1,2 +1,2 @@
-idf_component_register(SRCS "microros_publisher.c" "station_example_main.c"
+idf_component_register(SRCS "uros_node.c" "main.c"
                     INCLUDE_DIRS ".")

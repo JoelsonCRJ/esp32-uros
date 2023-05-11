@@ -1,6 +1,8 @@
 {
+    "idf.espIdfPath": "/home/joelson/esp/esp-idf",
     "files.associations": {
         "*.ipp": "c",
         "*.idl": "c"
-    }
+    },
+    "idf.adapterTargetName": "esp32"
 }
